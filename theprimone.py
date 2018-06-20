@@ -1,7 +1,11 @@
-import re, time
+import re, time, requests
 import pymysql
 from json import dump, loads
 from DBUtils.PooledDB import PooledDB
+
+
+def sleep_(st):
+    time.sleep(st)
 
 
 def dict2json(dict_, path_):
@@ -33,6 +37,8 @@ def str_time2int(str_time):
     :return:
     """
     datetime_list = re.split(r"[- :]", str_time)
+    datetime_list = [i for i in datetime_list if i]
+    # print(datetime_list)
     if len(datetime_list) == 3:
         return int(time.mktime(time.strptime(str_time, "%Y-%m-%d")))
     elif len(datetime_list) == 5:
@@ -57,6 +63,83 @@ def cookie_str2json(str_):
     dict2json(cookies_dict, "./json/cookies.json")
 
 
+def get_response(url, method="GET", headers=None, data=None, encoding_=None, **kwargs):
+    """
+    网页请求
+    :param url:
+    :param method:
+    :param headers:
+    :param data:
+    :param encoding_:
+    :return:
+    """
+    try:
+        res = requests.request(method=method, url=url, headers=headers, data=data, timeout=30, **kwargs)
+        if encoding_:
+            res.encoding = encoding_
+        else:
+            res.encoding = res.apparent_encoding
+        return res
+    except Exception as e:
+        print("Error", e)
+        return ""
+
+
+# ------------------------------------------------------------
+#                      字符串相关
+# ------------------------------------------------------------
+
+
+def find_nums(str_):
+    """
+    查找字符串中的数字
+    :param str_:
+    :return: 数字字符串列表
+    """
+    return re.findall(r"\d+", str_)
+
+
+def is_chinese(uchar):
+    """
+    判断一个unicode是否是汉字
+    :param uchar:
+    :return:
+    """
+    if u'\u4e00' <= uchar <= u'\u9fa5':
+        return True
+    else:
+        return False
+
+
+def mix_align_len(mix_str):
+    """
+    计算中英文混合字符串对齐长度
+    :param mix_str:
+    :return:
+    """
+    align_len = 0
+    for i in mix_str:
+        if is_chinese(i):
+            align_len += 2
+        else:
+            align_len += 1
+    return align_len
+
+
+def zh_en_align(mix_str, len_):
+    """
+    中英文混合字符串右填充为len_长度的对齐字符串
+    :param mix_str:
+    :param len_:
+    :return:
+    """
+    align_len = mix_align_len(mix_str)
+    if len_ >= align_len:
+        return "{}{}".format(mix_str, "_" * (len_ - align_len))
+    else:
+        return "len_ 过短"
+
+
 # ------------------------------------------------------------
 #                      数据库相关
 # ------------------------------------------------------------
@@ -78,21 +161,36 @@ def escape_db_string(str_):
     return str_
 
 
-def dict2replace_sql(dict_):
+def dict2replace_sql(dict_, table):
     """
     字典转换为replace语句
     :param dict_:
+    :param table:
     :return:
     """
-    table = dict_['table']
-    # print(table)
-    dict_.pop('table')
+    # table = dict_['table']
+    # # print(table)
+    # dict_.pop('table')
     kv_str = ''
-    for k, v in dict_.items():
-        kv_str = kv_str + k + ' = ' + "'" + str(v) + "', "
-    insert_sql = 'REPLACE INTO ' + table + ' SET ' + kv_str
-    insert_sql = insert_sql[:-2]
+    kv_str = ", ".join(["{}='{}'".format(k, v) for k, v in dict_.items()])
+    insert_sql = "REPLACE INTO {} SET {}".format(table, kv_str)
     return insert_sql
+
+
+def dict2update_sql(dict_, table, where_condition):
+    """
+    字典转换为replace语句
+    :param dict_:
+    :param table:
+    :param where_condition:
+    :return:
+    """
+    # table = dict_['table']
+    # # print(table)
+    # dict_.pop('table')
+    kv_str = ", ".join(["{}='{}'".format(k, v) for k, v in dict_.items()])
+    update_sql = "UPDATE {} SET {} WHERE {}".format(table, kv_str, where_condition)
+    return update_sql
 
 
 class MysqlUtil(object):
@@ -121,13 +219,18 @@ class MysqlUtil(object):
 
     def update_(self, sql):
         """
-        执行一条更新语句 插入\更新\删除
+        执行一条更新语句 插入\更新\删除\建表
         :param sql:
         :return:
         """
-        insert_num = self.cur.execute(sql)
-        self.conn.commit()
-        return insert_num
+        insert_num = -1
+        try:
+            insert_num = self.cur.execute(sql)
+            self.conn.commit()
+        except Exception as e:
+            print("Error: {}\nSQL: {}".format(e, sql))
+        finally:
+            return insert_num
 
     def batch_execute_sql(self, sql_list):
         """
@@ -169,5 +272,6 @@ class MysqlUtil(object):
 
 if __name__ == "__main__":
     # print(json2dict("./json/cookies.json"))
-    escape_db_string("a\'b")
+    # escape_db_string("a\'b")
+    print(str_time2int("2018-06-10  23:37:30"))
     pass
