@@ -136,10 +136,11 @@ def json2dict(path_):
     return dict_
 
 
-def cookie_str2json(str_):
+def cookie_str2json(str_, target_path):
     """
     请求头中cookie值保存到本地json文件
     :param str_:
+    :param target_path:
     :return:
     """
     cookies_dict = dict()
@@ -149,7 +150,7 @@ def cookie_str2json(str_):
             cookies_dict[j[0]] = "{}={}".format(j[1], j[2])
         else:
             cookies_dict[j[0]] = j[1]
-    dict2json(cookies_dict, "./json/cookies.json")
+    dict2json(cookies_dict, target_path)
 
 
 def get_response(is_json=False, encoding_=None, **kwargs):
