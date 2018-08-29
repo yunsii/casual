@@ -152,25 +152,20 @@ def cookie_str2json(str_):
     dict2json(cookies_dict, "./json/cookies.json")
 
 
-def get_response(url, method="GET", is_api=False, headers=None, params=None, data=None, encoding_=None, **kwargs):
+def get_response(is_json=False, encoding_=None, **kwargs):
     """
     网页请求
-    :param url:
-    :param method:
-    :param is_api:
-    :param headers:
-    :param params:  请求参数
-    :param data:  表单数据
+    :param is_json:
+    # :param params:  请求参数
+    # :param data:  表单数据
     :param encoding_:
     :return:
     """
     try:
-        res = requests.request(method=method, url=url, headers=headers, params=params, data=data, timeout=30, **kwargs)
+        res = requests.request(**kwargs)
         if encoding_:
             res.encoding = encoding_
-        else:
-            res.encoding = res.apparent_encoding
-        if is_api:
+        if is_json:
             return res.json()
         return res
     except Exception as e:
