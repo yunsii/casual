@@ -1,5 +1,6 @@
 import re, time, requests
 import pymysql, datetime
+from os import path
 from json import dump, loads, dumps
 from DBUtils.PooledDB import PooledDB
 from configparser import ConfigParser
@@ -8,6 +9,14 @@ from configparser import ConfigParser
 def sleep_(st):
     time.sleep(st)
 
+
+def pwd(*args):
+    """
+    返回当前项目（或文件？）绝对路径
+    :param args:
+    :return:
+    """
+    return path.join(path.dirname(__file__), *args)
 
 # ------------------------------------------------------------
 #                       对象相关
@@ -71,7 +80,7 @@ def str_time2int(str_time: str):
         return stamp
 
 
-def int2str_time(stamp, tplt="normal"):
+def num2str_time(stamp, tplt="normal"):
     """
     时间戳转格式化时间字符串
     :param stamp:
