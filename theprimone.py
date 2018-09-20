@@ -1,9 +1,16 @@
-import re, time, requests
-import pymysql, datetime
-from os import path
-from json import dump, loads, dumps
 from DBUtils.PooledDB import PooledDB
 from configparser import ConfigParser
+from json import dump, loads, dumps
+from logger import get_logger
+from os import path
+import requests
+import datetime
+import pymysql
+import time
+import re
+
+
+LOGGER = get_logger("prim")
 
 
 def sleep_(st):
@@ -64,7 +71,7 @@ def str_time2int(str_time: str):
     try:
         datetime_list = re.split(r"[- :]", str_time)
         datetime_list = [i for i in datetime_list if i]
-        print(datetime_list)
+        LOGGER.info("str_time split:{}".format(datetime_list))
         if len(datetime_list) == 3:
             stamp = int(time.mktime(time.strptime(str_time, "%Y-%m-%d")))
         elif len(datetime_list) == 5:
@@ -74,8 +81,8 @@ def str_time2int(str_time: str):
         else:
             stamp = str_time
     except Exception as e:
-        print("Exception str_time:", str_time)
-        print(e)
+        LOGGER.warn("Exception for the str_time:{}".format(str_time))
+        LOGGER.warn("Exception:{}".format(e))
     finally:
         return stamp
 
@@ -121,6 +128,15 @@ def dict2format_string(dict_, indent=4):
     :return:
     """
     return dumps(dict_, ensure_ascii=False, indent=indent)
+
+
+def dict2string(dict_):
+    """
+    字典序列化为字符串
+    :param dict_:
+    :return:
+    """
+    return dumps(dict_, ensure_ascii=False, indent=None)
 
 
 def dict2json(dict_, path_):
@@ -176,11 +192,26 @@ def get_response(is_json=False, encoding_=None, **kwargs):
         if encoding_:
             res.encoding = encoding_
         if is_json:
-            return res.json()
-        return res
+            return True, res.json()
+        return True, res
     except Exception as e:
-        print("Error", e)
-        return ""
+        return False, e
+
+
+def json_request(api_dict, method="post"):
+    """
+
+    :param api_dict:
+    :param method:
+    :return:
+    """
+    LOGGER.info("request->url:{} method:{} form:{}".format(api_dict["url"], method, dict2string(api_dict["form"])))
+    do_get, res = get_response(is_json=True, url=api_dict["url"], method=method, headers=api_dict["headers"],
+                               json=api_dict["form"])
+    if do_get:
+        LOGGER.info("response->{}".format(dict2string(res)))
+        return res
+    LOGGER.error("response unexpected exception:{}".format(res))
 
 
 # ------------------------------------------------------------
@@ -266,10 +297,6 @@ def dict2replace_sql(dict_, table):
     :param table:
     :return:
     """
-    # table = dict_['table']
-    # # print(table)
-    # dict_.pop('table')
-    kv_str = ''
     kv_str = ", ".join(["{}='{}'".format(k, v) for k, v in dict_.items()])
     insert_sql = "REPLACE INTO {} SET {}".format(table, kv_str)
     return insert_sql
@@ -283,9 +310,6 @@ def dict2update_sql(dict_, table, where_condition):
     :param where_condition:
     :return:
     """
-    # table = dict_['table']
-    # # print(table)
-    # dict_.pop('table')
     kv_str = ", ".join(["{}='{}'".format(k, v) for k, v in dict_.items()])
     update_sql = "UPDATE {} SET {} WHERE {}".format(table, kv_str, where_condition)
     return update_sql
@@ -410,6 +434,5 @@ class MysqlUtil(object):
 
 if __name__ == "__main__":
     # print((datetime.datetime(2018, 8, 26, 19, 15, 8)).timestamp())
-    print(dict2insert_sql("table", {"link": "977", "room_id": 777}))
+    # print(dict2insert_sql("table", {"link": "977", "room_id": 777}))
     pass
-
