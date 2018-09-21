@@ -1,6 +1,16 @@
 import logging
 import logging.config
-from theprimone import pwd
+from os import path
+
+
+def pwd(*args):
+    """
+    返回当前项目（或文件？）绝对路径
+    :param args:
+    :return:
+    """
+    # 不能调用theprimone中的pwd()方法，否则编译异常
+    return path.join(path.dirname(__file__), *args)
 
 
 # 定义三种日志输出格式
@@ -15,7 +25,7 @@ ID_SIMPLE_FORMAT = "[%(levelname)s][%(asctime)s] %(message)s"
 # if not os.path.isdir(logfile_dir):
 #     os.mkdir(logfile_dir)
 
-LOG4POCKET48_PATH = pwd("log", "theprimone.log")
+LOG4POCKET48_PATH = pwd("log", "prim.log")
 
 LOGGING_DICT = {
     "version": 1,
