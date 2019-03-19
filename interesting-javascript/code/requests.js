@@ -34,13 +34,13 @@ const post = (url, config) => request(url, { ...config, method: 'POST' });
 const put = (url, config) => request(url, { ...config, method: 'PUT' });
 
 const getJson = async (url, config) => {
-    let json;
+    const resp = await request(url, config);
+    let json = null;
     try {
-        const resp = await request(url, config);
         json = await resp.json();
     } catch (err) {
         console.log(err);
-        throw SyntaxError('[Format error]the response from server is not json format.');
+        throw new SyntaxError('[Format error]the response from server is not json format.');
     }
     return json;
 };
@@ -53,7 +53,7 @@ const getJsonByPost = async (url, config) => {
     return getJson(url, { ...config, method: "POST" })
 };
 
-const requests = {
+export default {
     request,
     get,
     post,
@@ -62,5 +62,3 @@ const requests = {
     getJsonByGet,
     getJsonByPost
 };
-
-export default requests;
